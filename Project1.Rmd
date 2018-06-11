@@ -1,0 +1,149 @@
+---
+title: "Reproducible Research - Course Project 1"
+author: "Ryan Maxfield"
+date: "June 8, 2018"
+output: html_document
+---
+
+
+Data
+====
+
+Dataset: https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip
+
+Dataset variables:
+
+        .       steps - Number of steps taken in 5-minute intervals
+        
+        .       date - Date the measurement was taked YYYY-MM-DD format
+        
+        .       interval - Identifies the 5-minute interval
+
+Dataset is stored as .csv and contains a total of 17,568 observations
+
+
+##1. Code for reading in the dataset and/or processing the data
+
+Obtain and load the dataset
+
+```{r}
+
+if(!file.exists("repdata%2FData%2Factivity.zip")) {
+        temp<-tempfile()
+        download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip",temp)
+        unzip(temp)
+        unlink(temp)
+}
+
+dx<-read.csv("activity.csv")
+dz<-dx
+```
+
+
+##2. Histogram of the total number of steps taken each day
+
+Aggregate data and obtain the total number of steps per day and graph using ggplot2
+
+```{r}
+da<-aggregate(steps~date,dx,sum)
+library(ggplot2)
+g<-ggplot(da,aes(steps))
+g+geom_histogram(binwidth = 500,color="black",fill="red")+
+        xlab("Number of Steps/Day")+
+        ggtitle("Histogram Total Number of Steps Taken Each Day",subtitle="Reproducible Research - Course Project 1")
+
+```
+
+
+##3. Mean and median number of steps taken each day
+
+Mean and median number of steps per day available using in summary
+
+```{r}
+summary(da$steps)
+```
+
+
+##4. Time series plot of the average number of steps taken
+
+Aggregate data and obtain the average number of steps per 5-minute period and graph using ggplot2
+
+```{r}
+db<-aggregate(steps~interval,dx,mean,na.rm=TRUE)
+h<-ggplot(db,aes(interval,steps))
+h+geom_line(color="darkred")+
+        xlab("Five Minute Interval")+
+        ylab("Number of Steps")+
+        ggtitle("Average Number of Steps per Five Minute Interval")
+```
+
+
+##5. The 5-minute interval that, on average, contains the maximum number of steps
+
+Determine the 5-minute interval with the average maximum number of steps
+
+```{r}
+db[which.max(db$steps),1]
+```
+
+
+##6. Code to describe and show strategy for imputing missing data
+
+Determine number of missing values
+```{r}
+sum(is.na(dx$steps))
+```
+
+Where no data is available replace with the calculated average (mean) using tapply
+
+```{r}
+dx$date<-as.Date(dx$date,"%m/%d/%Y")
+index<-which(is.na(dx$steps))
+l<-length(index)
+avg<-with(dx,tapply(steps,date,mean,na.rm=TRUE))
+dy<-mean(avg,na.rm=TRUE)
+for(i in 1:l){
+        dx[index[i],1]<-dy
+}
+```
+
+
+##7. Histogram of the total number of steps taken each day after missing values are imputed
+
+Aggregate data and obtain the total number of steps per day and graph using ggplot2
+
+```{r}
+dc<-aggregate(steps~date,dz,sum)
+library(ggplot2)
+g<-ggplot(dc,aes(steps))
+g+geom_histogram(binwidth = 500,color="black",fill="red")+
+        xlab("Number of Steps/Day")+
+        ggtitle("Histogram Total Number of Steps Taken Each Day (Imputed)",subtitle="Reproducible Research - Course Project 1")
+```
+
+
+##8. Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+
+Use xyplot function from lattice library
+
+```{r}
+dx$date <- as.Date(strptime(dx$date, format="%Y-%m-%d"))
+dx$day <- weekdays(dx$date)
+for (i in 1:nrow(dx)) {
+    if (dx[i,]$day %in% c("Saturday","Sunday")) {
+        dx[i,]$day<-"weekend"
+    }
+    else{
+        dx[i,]$day<-"weekday"
+    }
+}
+dwk<-aggregate(dx$steps~dx$interval+dx$day,dx,mean)
+names(dwk)<-c("interval","day","steps")
+library(lattice)
+xyplot(steps~interval|day,dwk,type="l",layout=c(1, 2), 
+    xlab="Interval",ylab="Number of Steps")
+```
+
+##The END
+
+
