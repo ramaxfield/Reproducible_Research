@@ -127,17 +127,17 @@ g+geom_histogram(binwidth = 500,color="black",fill="red")+
 Use xyplot function from lattice library
 
 ```{r}
-dx$date <- as.Date(strptime(dx$date, format="%Y-%m-%d"))
-dx$day <- weekdays(dx$date)
+dz$date <- as.Date(strptime(dz$date, format="%Y-%m-%d"))
+dz$day <- weekdays(dz$date)
 for (i in 1:nrow(dx)) {
-    if (dx[i,]$day %in% c("Saturday","Sunday")) {
-        dx[i,]$day<-"weekend"
+    if (dz[i,]$day %in% c("Saturday","Sunday")) {
+        dz[i,]$day<-"weekend"
     }
     else{
-        dx[i,]$day<-"weekday"
+        dz[i,]$day<-"weekday"
     }
 }
-dwk<-aggregate(dx$steps~dx$interval+dx$day,dx,mean)
+dwk<-aggregate(dz$steps~dz$interval+dz$day,dz,mean)
 names(dwk)<-c("interval","day","steps")
 library(lattice)
 xyplot(steps~interval|day,dwk,type="l",layout=c(1, 2), 
